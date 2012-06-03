@@ -23,7 +23,7 @@ abstract class StaticObject(world: ActorRef, initialPos: Pos, speed: Double) ext
     case MoveByCommand(dist, rot) =>
       pos = pos.move(dist, rot)
 
-      if (pos.x < 0 || pos.y < 0 || pos.x > 1000 || pos.y > 1000)
+      if (pos.x < World.minx - radius || pos.y < World.miny - radius || pos.x > World.maxx + radius || pos.y > World.maxy + radius)
         self ! PoisonPill
       else
         world ! ObjectMoved(self, pos)

@@ -53,6 +53,8 @@ case class PlayerJoined(name: String, player: ActorRef)
 case class PlayerSaid(name: String, text: String)
 case class PlayerQuited(name: String)
 
+case object CreateAsteroid
+
 class World extends Actor {
 
   var players = Map[String,ActorRef]()
@@ -60,11 +62,38 @@ class World extends Actor {
 
   override def preStart = {
     (1 to 5).foreach { i =>
-      context.actorOf(Props(new Asteroid(self, Pos(800 * random, 600 * random, 360 * random), 5*random)))
+      context.actorOf(Props(new Asteroid(self, Pos(World.minx + World.sizex * random, World.miny + World.sizey * random, 360 * random), 5*random)))
+    }
+
+    context.system.scheduler.schedule(3 second, 3 second) {
+      self ! CreateAsteroid
     }
   }
 
   def receive = {
+
+    case CreateAsteroid =>
+      val dir = 360 * random
+
+      if ( random > 0.5 ) {
+        val y = World.miny + World.sizey * random
+
+        val x = if (sin(dir / 180 * Pi) > 0)
+          World.minx - 60
+        else
+          World.maxx + 60
+
+        context.actorOf(Props(new Asteroid(self, Pos(x, y, dir), 5*random)))
+      } else {
+        val x = World.minx + World.sizex * random
+
+        val y = if (cos(dir / 180 * Pi) < 0)
+          World.miny - 60
+        else
+          World.maxy + 60
+
+        context.actorOf(Props(new Asteroid(self, Pos(x, y, dir), 5*random)))
+      }
 
     // Player events
 
@@ -127,4 +156,12 @@ object World {
 
   lazy val world = Akka.system.actorOf(Props[World])
 
+  def maxx = 1000
+  def minx = 0
+
+  def maxy = 1000
+  def miny = 0
+
+  def sizex = maxx - minx
+  def sizey = maxy - miny
 }
