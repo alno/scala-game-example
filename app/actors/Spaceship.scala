@@ -15,7 +15,7 @@ import play.api.Play.current
 
 case class MoveCommand(pos: Pos)
 
-class Ship(world: ActorRef, owner: String, var pos: Pos) extends Actor {
+class Spaceship(world: ActorRef, owner: String, var pos: Pos) extends Actor {
 
   def receive = {
     case MoveCommand(newPos) =>
@@ -24,7 +24,7 @@ class Ship(world: ActorRef, owner: String, var pos: Pos) extends Actor {
   }
 
   override def preStart = {
-    world ! ObjectCreated(self, owner, pos)
+    world ! ObjectCreated(self, ObjectState("Spaceship", owner, pos))
   }
 
   override def postStop = {

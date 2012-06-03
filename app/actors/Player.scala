@@ -48,7 +48,7 @@ class Player(world: ActorRef, name: String, out: PushEnumerator[JsValue]) extend
       stop
 
     case Event(In("start", data), None) =>
-      val ship = context.actorOf(Props(new Ship(world, name, Pos(400, 400, -30))))
+      val ship = context.actorOf(Props(new Spaceship(world, name, Pos(400, 400, -30))))
       stay using Some( ship )
 
     case Event(In("finish", data), Some(ship)) =>
@@ -71,8 +71,8 @@ class Player(world: ActorRef, name: String, out: PushEnumerator[JsValue]) extend
       out.push(JsObject(List("type" -> JsString("chat"), "player" -> JsString(playerName), "message" -> JsString(message))))
       stay
 
-    case Event(ObjectCreated(obj, owner, Pos(x,y,rot)), _) =>
-      out.push(JsObject(List("type" -> JsString("create"), "object" -> JsString(obj.toString), "owner" -> JsString(owner), "x" -> JsNumber(x), "y" -> JsNumber(y), "rot" -> JsNumber(rot))))
+    case Event(ObjectCreated(obj, ObjectState(objType, owner, Pos(x,y,rot))), _) =>
+      out.push(JsObject(List("type" -> JsString("create"), "object" -> JsString(obj.toString), "objectType" -> JsString(objType), "owner" -> JsString(owner), "x" -> JsNumber(x), "y" -> JsNumber(y), "rot" -> JsNumber(rot))))
       stay
 
     case Event(ObjectDestroyed(obj), _) =>
@@ -82,6 +82,7 @@ class Player(world: ActorRef, name: String, out: PushEnumerator[JsValue]) extend
     case Event(ObjectMoved(obj, Pos(x,y,rot)), _) =>
       out.push(JsObject(List("type" -> JsString("move"), "object" -> JsString(obj.toString), "x" -> JsNumber(x), "y" -> JsNumber(y), "rot" -> JsNumber(rot))))
       stay
+
   }
 
 }

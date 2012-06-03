@@ -15,7 +15,9 @@ import play.api.Play.current
 
 case class Pos(x: Double, y: Double, rot: Double)
 
-case class ObjectCreated(obj: ActorRef, owner: String, pos: Pos)
+case class ObjectState(typeName: String, owner: String, pos: Pos)
+
+case class ObjectCreated(obj: ActorRef, state: ObjectState)
 case class ObjectMoved(obj: ActorRef, pos: Pos)
 case class ObjectDestroyed(obj: ActorRef)
 
@@ -26,7 +28,7 @@ case class PlayerQuited(name: String)
 class World extends Actor {
 
   var players = Map[String,ActorRef]()
-  var objects = Map[ActorRef,(String,Pos)]()
+  var objects = Map[ActorRef,ObjectState]()
 
   def receive = {
 
@@ -38,7 +40,7 @@ class World extends Actor {
       players.values.foreach { _ ! msg }
 
       players.withFilter(_._1 != name).foreach { t => player ! PlayerJoined(t._1, t._2) }
-      objects.foreach { t => player ! ObjectCreated(t._1, t._2._1, t._2._2) }
+      objects.foreach { t => player ! ObjectCreated(t._1, t._2) }
 
     case msg @ PlayerQuited(name) =>
       players -= name
@@ -50,8 +52,8 @@ class World extends Actor {
 
     // Object events
 
-    case msg @ ObjectCreated(obj, owner, pos) =>
-      objects += obj -> (owner, pos)
+    case msg @ ObjectCreated(obj, state) =>
+      objects += obj -> state
 
       players.values.foreach { _ ! msg }
 
@@ -61,7 +63,7 @@ class World extends Actor {
       players.values.foreach { _ ! msg }
 
     case msg @ ObjectMoved(obj, pos) =>
-      objects += obj -> (objects(obj)._1, pos)
+      objects += obj -> objects(obj).copy(pos = pos)
 
       players.values.foreach { _ ! msg }
 
