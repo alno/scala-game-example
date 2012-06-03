@@ -22,6 +22,15 @@ case class Pos(x: Double, y: Double, rot: Double) {
 
   def lerp(other: Pos, value: Double) =
     Pos(x + (other.x - x) * value, y + (other.y - y) * value, rot + (other.rot - rot) * value)
+
+  def move(dist: Double, drot: Double) = {
+    val nrot = rot + drot
+    val nx = x + dist * sin(nrot / 180 * Pi)
+    val ny = y - dist * cos(nrot / 180 * Pi)
+
+    Pos(nx, ny, nrot)
+  }
+
 }
 
 case class ObjectState(typeName: String, owner: String, pos: Pos, radius: Double) {
@@ -50,8 +59,9 @@ class World extends Actor {
   var objects = Map[ActorRef,ObjectState]()
 
   override def preStart = {
-    context.actorOf(Props(new Asteroid(self, Pos(100,200,20))))
-    context.actorOf(Props(new Asteroid(self, Pos(300,100,20))))
+    (1 to 5).foreach { i =>
+      context.actorOf(Props(new Asteroid(self, Pos(800 * random, 600 * random, 360 * random))))
+    }
   }
 
   def receive = {

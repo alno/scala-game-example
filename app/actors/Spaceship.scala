@@ -13,13 +13,11 @@ import akka.pattern.ask
 
 import play.api.Play.current
 
-case class MoveCommand(pos: Pos)
-
 class Spaceship(world: ActorRef, owner: String, var pos: Pos) extends Actor {
 
   def receive = {
-    case MoveCommand(newPos) =>
-      pos = newPos
+    case MoveByCommand(dist, rot) =>
+      pos = pos.move(dist, rot)
       world ! ObjectMoved(self, pos)
   }
 

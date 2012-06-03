@@ -14,13 +14,13 @@ import akka.pattern.ask
 import play.api.Play.current
 import scala.math._
 
-case class MoveByCommand(dx: Double, dy: Double, drot: Double)
+case class MoveByCommand(dist: Double, rot: Double)
 
 class Asteroid(world: ActorRef, var pos: Pos) extends Actor {
 
   def receive = {
-    case MoveByCommand(dx, dy, drot) =>
-      pos = pos.copy(x = pos.x + dx, y = pos.y + dy, rot = pos.rot + drot)
+    case MoveByCommand(dist, rot) =>
+      pos = pos.move(dist, rot)
       world ! ObjectMoved(self, pos)
   }
 

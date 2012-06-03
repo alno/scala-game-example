@@ -9,22 +9,19 @@ Crafty.c "PlayerControls",
     @
 
   onEnterFrame: (e) ->
-    moved = false
+    rot = 0
+    dist = 0
 
     if @isDown('LEFT_ARROW')
-      @rotation -= 1
-      moved = true
+      rot = -2
 
     if @isDown('RIGHT_ARROW')
-      @rotation += 1
-      moved = true
+      rot = 2
 
     if @isDown('UP_ARROW')
-      @x += @speed * Math.sin(@rotation * (Math.PI / 180))
-      @y -= @speed * Math.cos(@rotation * (Math.PI / 180))
-      moved = true
+      dist = @speed
 
-    @trigger('Moved', { x: @x, y: @y, rot: @rotation }) if moved
+    @trigger('MoveRequest', { dist: dist, rot: rot }) if dist != 0 or rot != 0
 
 class @Game
 
@@ -59,7 +56,7 @@ class @Game
       @objects[data.object]?.destroy()
 
       if data.owner == @name
-        @objects[data.object] = Crafty.e("2D, DOM, #{data.objectType}, Text, PlayerControls").enableControl().bind('Moved', (m) => @send $.extend({type: 'move'}, m) )
+        @objects[data.object] = Crafty.e("2D, DOM, #{data.objectType}, Text, PlayerControls").enableControl().bind('MoveRequest', (m) => @send $.extend({type: 'move'}, m) )
       else
         @objects[data.object] = Crafty.e("2D, DOM, #{data.objectType}, Text")
 

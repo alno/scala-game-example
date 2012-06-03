@@ -13,6 +13,8 @@ import akka.pattern.ask
 
 import play.api.Play.current
 
+import scala.math._
+
 case class In(event: String, data: JsValue)
 
 sealed trait PlayerState
@@ -48,7 +50,7 @@ class Player(world: ActorRef, name: String, out: PushEnumerator[JsValue]) extend
       stop
 
     case Event(In("start", data), None) =>
-      val ship = context.actorOf(Props(new Spaceship(world, name, Pos(400, 400, -30))))
+      val ship = context.actorOf(Props(new Spaceship(world, name, Pos(800 * random, 600 * random, 360 * random))))
       stay using Some( ship )
 
     case Event(In("finish", data), Some(ship)) =>
@@ -56,7 +58,7 @@ class Player(world: ActorRef, name: String, out: PushEnumerator[JsValue]) extend
       stay using None
 
     case Event(In("move", data), Some(ship)) =>
-      ship ! MoveCommand(Pos((data \ "x").as[Double], (data \ "y").as[Double], (data \ "rot").as[Double]))
+      ship ! MoveByCommand((data \ "dist").as[Double], (data \ "rot").as[Double])
       stay
 
     case Event(PlayerJoined(playerName, _), _) =>
