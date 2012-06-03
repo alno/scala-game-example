@@ -15,7 +15,9 @@ import play.api.Play.current
 
 case object FireCommand
 
-class Spaceship(world: ActorRef, owner: String, var pos: Pos) extends Actor {
+class Spaceship(world: ActorRef, val owner: String, var pos: Pos) extends GameObject(world) {
+
+  def radius = 30
 
   def receive = {
     case MoveByCommand(dist, rot) =>
@@ -23,14 +25,6 @@ class Spaceship(world: ActorRef, owner: String, var pos: Pos) extends Actor {
       world ! ObjectMoved(self, pos)
     case FireCommand =>
       context.actorOf(Props(new Rocket(world, pos.move(60, 0), 20)))
-  }
-
-  override def preStart = {
-    world ! ObjectCreated(self, ObjectState("Spaceship", owner, pos, 30))
-  }
-
-  override def postStop = {
-    world ! ObjectDestroyed(self)
   }
 
 }

@@ -16,24 +16,8 @@ import scala.math._
 
 case class MoveByCommand(dist: Double, rot: Double)
 
-class Asteroid(world: ActorRef, var pos: Pos) extends Actor {
+class Asteroid(world: ActorRef, initialPos: Pos, speed: Double) extends StaticObject(world, initialPos, speed) {
 
-  def receive = {
-    case MoveByCommand(dist, rot) =>
-      pos = pos.move(dist, rot)
-      world ! ObjectMoved(self, pos)
-  }
-
-  override def preStart = {
-    world ! ObjectCreated(self, ObjectState("Asteroid", null, pos, 60))
-
-    /*context.system.scheduler.schedule(0.1 second, 0.1 second) {
-      self ! MoveByCommand(random * 4 - 2, random * 4 - 2, random * 2 - 1)
-    }*/
-  }
-
-  override def postStop = {
-    world ! ObjectDestroyed(self)
-  }
+  def radius = 60
 
 }

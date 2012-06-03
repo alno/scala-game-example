@@ -60,7 +60,7 @@ class World extends Actor {
 
   override def preStart = {
     (1 to 5).foreach { i =>
-      context.actorOf(Props(new Asteroid(self, Pos(800 * random, 600 * random, 360 * random))))
+      context.actorOf(Props(new Asteroid(self, Pos(800 * random, 600 * random, 360 * random), 5*random)))
     }
   }
 
