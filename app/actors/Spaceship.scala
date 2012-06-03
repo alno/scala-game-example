@@ -22,7 +22,7 @@ class Spaceship(world: ActorRef, owner: String, var pos: Pos) extends Actor {
       pos = pos.move(dist, rot)
       world ! ObjectMoved(self, pos)
     case FireCommand =>
-      context.actorOf(Props(new Rocket(world, pos.move(60, 0), 0)))
+      context.actorOf(Props(new Rocket(world, pos.move(60, 0), 20)))
   }
 
   override def preStart = {
