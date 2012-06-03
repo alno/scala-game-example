@@ -13,20 +13,24 @@ import akka.pattern.ask
 
 import play.api.Play.current
 
-case object FireCommand
-
-class Spaceship(world: ActorRef, owner: String, var pos: Pos) extends Actor {
+class Rocket(world: ActorRef, var pos: Pos, speed: Double) extends Actor {
 
   def receive = {
     case MoveByCommand(dist, rot) =>
       pos = pos.move(dist, rot)
-      world ! ObjectMoved(self, pos)
-    case FireCommand =>
-      context.actorOf(Props(new Rocket(world, pos.move(60, 0), 0)))
+
+      if (pos.x < 0 || pos.y < 0 || pos.x > 1000 || pos.y > 1000)
+        self ! PoisonPill
+      else
+        world ! ObjectMoved(self, pos)
   }
 
   override def preStart = {
-    world ! ObjectCreated(self, ObjectState("Spaceship", owner, pos, 30))
+    world ! ObjectCreated(self, ObjectState("Rocket", null, pos, 5))
+
+    context.system.scheduler.schedule(0.05 second, 0.05 second) {
+      self ! MoveByCommand(speed, 0)
+    }
   }
 
   override def postStop = {

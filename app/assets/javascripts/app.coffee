@@ -5,6 +5,7 @@ Crafty.c "PlayerControls",
 
   enableControl: ()->
     @bind("EnterFrame", @onEnterFrame)
+    @bind("KeyDown", @onKeyDown)
     @speed = 3
     @
 
@@ -21,7 +22,15 @@ Crafty.c "PlayerControls",
     if @isDown('UP_ARROW')
       dist = @speed
 
-    @trigger('MoveRequest', { dist: dist, rot: rot }) if dist != 0 or rot != 0
+    if dist != 0 or rot != 0
+      @rotation += rot
+      @x += dist * Math.sin(@rotation / 180 * Math.PI)
+      @y -= dist * Math.cos(@rotation / 180 * Math.PI)
+      @trigger('MoveRequest', { dist: dist, rot: rot })
+
+  onKeyDown: (e) ->
+    if e.key == 32
+      @trigger('FireRequest')
 
 class @Game
 
@@ -51,16 +60,20 @@ class @Game
     else if data.type == 'quit'
       console.log("Player #{data.player} quited")
     else if data.type == 'create'
-      console.log("Object #{data.object} created")
+      console.log("Object #{data.object} of type #{data.objectType} created")
 
       @objects[data.object]?.destroy()
 
       if data.owner == @name
-        @objects[data.object] = Crafty.e("2D, DOM, #{data.objectType}, Text, PlayerControls").enableControl().bind('MoveRequest', (m) => @send $.extend({type: 'move'}, m) )
+        @objects[data.object] = Crafty.e("2D, DOM, #{data.objectType}, Text, PlayerControls")
+          .enableControl()
+          .bind('MoveRequest', (m) => @send $.extend({type: 'move'}, m) )
+          .bind('FireRequest', (m) => @send $.extend({type: 'fire'}, m) )
       else
         @objects[data.object] = Crafty.e("2D, DOM, #{data.objectType}, Text")
 
-      @objects[data.object].attr(x: data.x, y: data.y, z:1, rotation: data.rot ).origin('center').text(data.owner)
+      obj = @objects[data.object]
+      obj.origin('center').attr(x: data.x - obj.w / 2, y: data.y - obj.h / 2, z:1, rotation: data.rot ).text(data.owner)
 
     else if data.type == 'destroy'
       console.log("Object #{data.object} destroyed")
@@ -68,7 +81,8 @@ class @Game
       @objects[data.object]?.destroy()
       @objects[data.object] = null
     else if data.type == 'move'
-      @objects[data.object]?.attr(x: data.x, y: data.y, rotation: data.rot)
+      obj = @objects[data.object]
+      obj?.attr(x: data.x - obj.w / 2, y: data.y - obj.h / 2, rotation: data.rot)
     else if data.type == 'effect'
       Crafty.e("2D, DOM, #{data.effectType}, SpriteAnimation").origin('center').attr(x: data.x, y: data.y, z:1, rotation: data.rot ).animate('Effect', [[0,0],[1,0],[2,0],[3,0],[0,1],[1,1],[2,1],[3,1],[0,2],[1,2],[2,2],[3,2],[0,3],[1,3],[2,3],[3,3]]).animate('Effect', 16)
       console.log("Effect created")
@@ -82,6 +96,9 @@ class @Game
 
     Crafty.sprite 128, "assets/images/explosion.png",
       Explosion: [0, 0]
+
+    Crafty.sprite "assets/images/rocket.png",
+      Rocket: [0, 0, 10, 22]
 
     @ws = new WS(@url)
     @ws.onmessage = (e) =>

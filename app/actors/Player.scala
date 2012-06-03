@@ -61,6 +61,10 @@ class Player(world: ActorRef, name: String, out: PushEnumerator[JsValue]) extend
       ship ! MoveByCommand((data \ "dist").as[Double], (data \ "rot").as[Double])
       stay
 
+    case Event(In("fire", data), Some(ship)) =>
+      ship ! FireCommand
+      stay
+
     case Event(PlayerJoined(playerName, _), _) =>
       out.push(JsObject(List("type" -> JsString("join"), "player" -> JsString(playerName))))
       stay
