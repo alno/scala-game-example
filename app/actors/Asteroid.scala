@@ -13,9 +13,7 @@ import akka.pattern.ask
 
 import play.api.Play.current
 
-case class MoveCommand(pos: Pos)
-
-class Spaceship(world: ActorRef, owner: String, var pos: Pos) extends Actor {
+class Asteroid(world: ActorRef, var pos: Pos) extends Actor {
 
   def receive = {
     case MoveCommand(newPos) =>
@@ -24,7 +22,7 @@ class Spaceship(world: ActorRef, owner: String, var pos: Pos) extends Actor {
   }
 
   override def preStart = {
-    world ! ObjectCreated(self, ObjectState("Spaceship", owner, pos, 30))
+    world ! ObjectCreated(self, ObjectState("Asteroid", null, pos, 60))
   }
 
   override def postStop = {

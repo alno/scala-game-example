@@ -71,8 +71,8 @@ class Player(world: ActorRef, name: String, out: PushEnumerator[JsValue]) extend
       out.push(JsObject(List("type" -> JsString("chat"), "player" -> JsString(playerName), "message" -> JsString(message))))
       stay
 
-    case Event(ObjectCreated(obj, ObjectState(objType, owner, Pos(x,y,rot))), _) =>
-      out.push(JsObject(List("type" -> JsString("create"), "object" -> JsString(obj.toString), "objectType" -> JsString(objType), "owner" -> JsString(owner), "x" -> JsNumber(x), "y" -> JsNumber(y), "rot" -> JsNumber(rot))))
+    case Event(ObjectCreated(obj, ObjectState(objType, owner, Pos(x,y,rot), radius)), _) =>
+      out.push(JsObject(List("type" -> JsString("create"), "object" -> JsString(obj.toString), "objectType" -> JsString(objType), "owner" -> JsString(owner), "x" -> JsNumber(x), "y" -> JsNumber(y), "rot" -> JsNumber(rot), "radius" -> JsNumber(radius))))
       stay
 
     case Event(ObjectDestroyed(obj), _) =>
@@ -81,6 +81,10 @@ class Player(world: ActorRef, name: String, out: PushEnumerator[JsValue]) extend
 
     case Event(ObjectMoved(obj, Pos(x,y,rot)), _) =>
       out.push(JsObject(List("type" -> JsString("move"), "object" -> JsString(obj.toString), "x" -> JsNumber(x), "y" -> JsNumber(y), "rot" -> JsNumber(rot))))
+      stay
+
+    case Event(EffectCreated(effectType, Pos(x,y,rot)), _) =>
+      out.push(JsObject(List("type" -> JsString("effect"), "effectType" -> JsString(effectType.toString), "x" -> JsNumber(x), "y" -> JsNumber(y), "rot" -> JsNumber(rot))))
       stay
 
   }

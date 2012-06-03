@@ -13,13 +13,32 @@ import akka.pattern.ask
 
 import play.api.Play.current
 
-case class Pos(x: Double, y: Double, rot: Double)
+import scala.math._
 
-case class ObjectState(typeName: String, owner: String, pos: Pos)
+case class Pos(x: Double, y: Double, rot: Double) {
+
+  def distance(other: Pos) =
+    sqrt((x - other.x)*(x - other.x) + (y - other.y)*(y - other.y))
+
+  def lerp(other: Pos, value: Double) =
+    Pos(x + (other.x - x) * value, y + (other.y - y) * value, rot + (other.rot - rot) * value)
+}
+
+case class ObjectState(typeName: String, owner: String, pos: Pos, radius: Double) {
+
+  def intersects(other: ObjectState) =
+    distance(other) < radius + other.radius
+
+  def distance(other: ObjectState) =
+    pos.distance(other.pos)
+
+}
 
 case class ObjectCreated(obj: ActorRef, state: ObjectState)
 case class ObjectMoved(obj: ActorRef, pos: Pos)
 case class ObjectDestroyed(obj: ActorRef)
+
+case class EffectCreated(name: String, pos: Pos)
 
 case class PlayerJoined(name: String, player: ActorRef)
 case class PlayerSaid(name: String, text: String)
@@ -30,6 +49,11 @@ class World extends Actor {
   var players = Map[String,ActorRef]()
   var objects = Map[ActorRef,ObjectState]()
 
+  override def preStart = {
+    context.actorOf(Props(new Asteroid(self, Pos(100,200,20))))
+    context.actorOf(Props(new Asteroid(self, Pos(300,100,20))))
+  }
+
   def receive = {
 
     // Player events
@@ -37,7 +61,7 @@ class World extends Actor {
     case msg @ PlayerJoined(name, player) =>
       players += name -> player
 
-      players.values.foreach { _ ! msg }
+      sendToPlayers(msg)
 
       players.withFilter(_._1 != name).foreach { t => player ! PlayerJoined(t._1, t._2) }
       objects.foreach { t => player ! ObjectCreated(t._1, t._2) }
@@ -45,29 +69,47 @@ class World extends Actor {
     case msg @ PlayerQuited(name) =>
       players -= name
 
-      players.values.foreach { _ ! msg }
+      sendToPlayers(msg)
 
     case msg @ PlayerSaid(name, text) =>
-      players.values.foreach { _ ! msg }
+      sendToPlayers(msg)
 
     // Object events
 
     case msg @ ObjectCreated(obj, state) =>
       objects += obj -> state
 
-      players.values.foreach { _ ! msg }
+      sendToPlayers(msg)
 
     case msg @ ObjectDestroyed(obj) =>
       objects -= obj
 
-      players.values.foreach { _ ! msg }
+      sendToPlayers(msg)
 
     case msg @ ObjectMoved(obj, pos) =>
-      objects += obj -> objects(obj).copy(pos = pos)
+      val objState = objects(obj).copy(pos = pos)
 
-      players.values.foreach { _ ! msg }
+      objects += obj -> objState
 
+      sendToPlayers(msg)
+
+      checkCollisions(obj, objState)
   }
+
+  def checkCollisions(obj: ActorRef, state: ObjectState) {
+    for ((otherObj, otherState) <- objects)
+        if (obj != otherObj && state.intersects(otherState)) {
+          obj ! PoisonPill
+          otherObj ! PoisonPill
+
+          sendToPlayers( EffectCreated("Explosion", state.pos.lerp(otherState.pos, state.radius / otherState.radius)) )
+
+          return
+        }
+  }
+
+  def sendToPlayers(msg : Any) =
+    players.values.foreach { _ ! msg }
 
 }
 

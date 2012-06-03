@@ -59,9 +59,9 @@ class @Game
       @objects[data.object]?.destroy()
 
       if data.owner == @name
-        @objects[data.object] = Crafty.e("2D, DOM, Spaceship, Text, PlayerControls").enableControl().bind('Moved', (m) => @send $.extend({type: 'move'}, m) )
+        @objects[data.object] = Crafty.e("2D, DOM, #{data.objectType}, Text, PlayerControls").enableControl().bind('Moved', (m) => @send $.extend({type: 'move'}, m) )
       else
-        @objects[data.object] = Crafty.e("2D, DOM, Spaceship, Text")
+        @objects[data.object] = Crafty.e("2D, DOM, #{data.objectType}, Text")
 
       @objects[data.object].attr(x: data.x, y: data.y, z:1, rotation: data.rot ).origin('center').text(data.owner)
 
@@ -72,10 +72,19 @@ class @Game
       @objects[data.object] = null
     else if data.type == 'move'
       @objects[data.object]?.attr(x: data.x, y: data.y, rotation: data.rot)
+    else if data.type == 'effect'
+      Crafty.e("2D, DOM, #{data.effectType}, SpriteAnimation").origin('center').attr(x: data.x, y: data.y, z:1, rotation: data.rot ).animate('Effect', [[0,0],[1,0],[2,0],[3,0],[0,1],[1,1],[2,1],[3,1],[0,2],[1,2],[2,2],[3,2],[0,3],[1,3],[2,3],[3,3]]).animate('Effect', 16)
+      console.log("Effect created")
 
   defineMainScene: =>
     Crafty.sprite "assets/images/spaceship.png",
       Spaceship: [0, 0, 54, 80]
+
+    Crafty.sprite "assets/images/asteroid.png",
+      Asteroid: [0, 0, 130, 130]
+
+    Crafty.sprite 128, "assets/images/explosion.png",
+      Explosion: [0, 0]
 
     @ws = new WS(@url)
     @ws.onmessage = (e) =>
@@ -86,7 +95,7 @@ class @Game
       @send(type: 'start')
 
   defineLoadingScene: =>
-    Crafty.load ["assets/images/spaceship.png"], =>
+    Crafty.load ["assets/images/spaceship.png", "assets/images/asteroid.png", "assets/images/explosion.png"], =>
       Crafty.scene("main")
 
     Crafty.background("#000")
