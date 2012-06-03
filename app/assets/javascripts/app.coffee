@@ -35,6 +35,7 @@ class @Game
 
   constructor: (@name, @url)->
     @players = {}
+    @objects = {}
 
     Crafty.init(1000, 800)
     Crafty.canvas.init()
@@ -49,17 +50,28 @@ class @Game
 
   receive: (data) ->
     if data.type =='join'
-      @players[data.player]?.destroy()
-      @players[data.player] = Crafty.e("2D, DOM, Spaceship, Text, PlayerControls").attr(x: data.x, y: data.y, z:1, rotation: data.rot ).origin('center').text(data.player)
-
-      if data.player == @name
-        @players[data.player].enableControl().bind('Moved', (m) => @send $.extend({type: 'move'}, m) )
-
+      console.log("Player #{data.player} joined")
     else if data.type == 'quit'
-      @players[data.player]?.destroy()
-      @players[data.player] = null
+      console.log("Player #{data.player} quited")
+    else if data.type == 'create'
+      console.log("Object #{data.object} created")
+
+      @objects[data.object]?.destroy()
+
+      if data.owner == @name
+        @objects[data.object] = Crafty.e("2D, DOM, Spaceship, Text, PlayerControls").enableControl().bind('Moved', (m) => @send $.extend({type: 'move'}, m) )
+      else
+        @objects[data.object] = Crafty.e("2D, DOM, Spaceship, Text")
+
+      @objects[data.object].attr(x: data.x, y: data.y, z:1, rotation: data.rot ).origin('center').text(data.owner)
+
+    else if data.type == 'destroy'
+      console.log("Object #{data.object} destroyed")
+
+      @objects[data.object]?.destroy()
+      @objects[data.object] = null
     else if data.type == 'move'
-      @players[data.player]?.attr(x: data.x, y: data.y, rotation: data.rot)
+      @objects[data.object]?.attr(x: data.x, y: data.y, rotation: data.rot)
 
   defineMainScene: =>
     Crafty.sprite "assets/images/spaceship.png",
@@ -71,6 +83,7 @@ class @Game
       @receive JSON.parse(e.data)
     @ws.onopen = (e) =>
       @send(type: 'connect')
+      @send(type: 'start')
 
   defineLoadingScene: =>
     Crafty.load ["assets/images/spaceship.png"], =>

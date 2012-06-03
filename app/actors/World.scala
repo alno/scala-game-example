@@ -15,47 +15,56 @@ import play.api.Play.current
 
 case class Pos(x: Double, y: Double, rot: Double)
 
-case class Join(name: String, player: ActorRef, pos: Pos)
-case class Say(name: String, text: String)
-case class Quit(name: String)
-case class Move(name: String, pos: Pos)
+case class ObjectCreated(obj: ActorRef, owner: String, pos: Pos)
+case class ObjectMoved(obj: ActorRef, pos: Pos)
+case class ObjectDestroyed(obj: ActorRef)
+
+case class PlayerJoined(name: String, player: ActorRef)
+case class PlayerSaid(name: String, text: String)
+case class PlayerQuited(name: String)
 
 class World extends Actor {
 
   var players = Map[String,ActorRef]()
-  var positions = Map[String,Pos]()
+  var objects = Map[ActorRef,(String,Pos)]()
 
   def receive = {
-    case msg @ Join(joinedName, joinedActor, joinedPos) =>
-      players += joinedName -> joinedActor
-      positions += joinedName -> joinedPos
 
-      joinedActor ! msg
+    // Player events
 
-      for ( (name, actor) <- players if name != joinedName) {
-        actor ! msg
-        joinedActor ! Join(name, actor, positions(name))
-      }
+    case msg @ PlayerJoined(name, player) =>
+      players += name -> player
 
-    case msg @ Quit(quitedName) =>
-      players -= quitedName
-      positions -= quitedName
+      players.values.foreach { _ ! msg }
 
-      players.values.foreach { actor =>
-        actor ! msg
-      }
+      players.withFilter(_._1 != name).foreach { t => player ! PlayerJoined(t._1, t._2) }
+      objects.foreach { t => player ! ObjectCreated(t._1, t._2._1, t._2._2) }
 
-    case msg : Move =>
-      positions += msg.name -> msg.pos
+    case msg @ PlayerQuited(name) =>
+      players -= name
 
-      players.values.foreach { actor =>
-        actor ! msg
-      }
+      players.values.foreach { _ ! msg }
 
-    case msg : Say =>
-      players.values.foreach { actor =>
-        actor ! msg
-      }
+    case msg @ PlayerSaid(name, text) =>
+      players.values.foreach { _ ! msg }
+
+    // Object events
+
+    case msg @ ObjectCreated(obj, owner, pos) =>
+      objects += obj -> (owner, pos)
+
+      players.values.foreach { _ ! msg }
+
+    case msg @ ObjectDestroyed(obj) =>
+      objects -= obj
+
+      players.values.foreach { _ ! msg }
+
+    case msg @ ObjectMoved(obj, pos) =>
+      objects += obj -> (objects(obj)._1, pos)
+
+      players.values.foreach { _ ! msg }
+
   }
 
 }
