@@ -1,0 +1,20 @@
+@(username: Option[String])(implicit request: RequestHeader)
+
+@main("Welcome to Play 2.0") {
+
+  @username.map { name =>
+
+    <script>
+      new Game('@name','@routes.Application.connect(name).webSocketURL()')
+    </script>
+  }.getOrElse {
+
+    <h1>You should login first</h1>
+
+    <form action="@routes.Application.index()" class="pull-right">
+      <input id="username" name="username" class="input-small" type="text" placeholder="Username">
+      <button class="btn" type="submit">Sign in</button>
+    </form>
+
+  }
+}
