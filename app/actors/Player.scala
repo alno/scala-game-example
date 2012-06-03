@@ -2,15 +2,12 @@ package actors
 
 import akka.actor._
 import akka.util.duration._
+import akka.util.Timeout
 
 import play.api._
 import play.api.libs.json._
 import play.api.libs.iteratee._
 import play.api.libs.concurrent._
-
-import akka.util.Timeout
-import akka.pattern.ask
-
 import play.api.Play.current
 
 import scala.math._
